@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Livelo Alert — Painel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/shared.css" />
+  <style>
+    /* ─── Header ───────────────────────────────────────────── */
+    header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; margin-bottom: 52px;
+      animation: fadeUp .35s ease both;
+    }
+    .logo-eyebrow { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); margin-bottom: 6px; }
+    .logo-title { font-family: 'Syne', sans-serif; font-size: clamp(24px, 5vw, 34px); font-weight: 800; line-height: 1.05; letter-spacing: -.02em; }
+    .logo-title span { color: var(--orange); }
+    .logo-sub { margin-top: 8px; font-size: 14px; color: var(--muted); font-weight: 300; }
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+    .user-pill { font-size: 12px; font-weight: 500; color: var(--muted); padding: 7px 12px; border-radius: 40px; background: var(--card); border: 1px solid var(--border); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ─── Profile card ─────────────────────────────────────── */
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .profile-item { display: flex; flex-direction: column; gap: 4px; }
+    .profile-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .profile-value { font-size: 14px; font-weight: 500; color: var(--text); }
+    .profile-value.accent { color: var(--orange); }
+
+    /* ─── Tag list ─────────────────────────────────────────── */
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tag {
+      font-size: 12px; font-weight: 500; padding: 4px 10px;
+      border-radius: 40px; background: var(--chip-bg);
+      border: 1px solid var(--border); color: var(--muted);
+      white-space: nowrap;
+    }
+    .tag.orange { background: var(--orange-lo); border-color: var(--orange); color: var(--orange); }
+    .tag.more { font-style: italic; }
+
+    /* ─── Action row ───────────────────────────────────────── */
+    .action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .action-row .submit-btn { flex: 1; min-width: 180px; }
+
+    /* ─── Confirm dialog ───────────────────────────────────── */
+    .confirm-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 500; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .confirm-overlay.visible { opacity: 1; pointer-events: auto; }
+    .confirm-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px 28px; max-width: 400px; width: 100%;
+      box-shadow: 0 8px 40px rgba(0,0,0,.6);
+      transform: translateY(12px); transition: transform .25s;
+    }
+    .confirm-overlay.visible .confirm-box { transform: translateY(0); }
+    .confirm-icon { font-size: 28px; margin-bottom: 12px; }
+    .confirm-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .confirm-body  { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+    .confirm-actions { display: flex; gap: 10px; }
+    .confirm-actions .danger-btn { flex: 1; padding: 13px; text-align: center; font-size: 14px; }
+    .confirm-actions .secondary-btn { flex: 1; padding: 13px; text-align: center; font-size: 14px; }
+
+    /* ─── Status card ──────────────────────────────────────── */
+    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .status-info { display: flex; flex-direction: column; gap: 3px; }
+    .status-title { font-size: 14px; font-weight: 500; }
+    .status-sub   { font-size: 12px; color: var(--muted); }
+
+    /* ─── Preview modal ────────────────────────────────── */
+    .preview-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.75); backdrop-filter: blur(5px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 600; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .preview-overlay.visible { opacity: 1; pointer-events: auto; }
+    .preview-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; width: 100%; max-width: 480px;
+      max-height: 85vh; display: flex; flex-direction: column;
+      box-shadow: 0 12px 48px rgba(0,0,0,.7);
+      transform: translateY(14px); transition: transform .25s;
+      overflow: hidden;
+    }
+    .preview-overlay.visible .preview-box { transform: translateY(0); }
+    .preview-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .preview-header-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+    .preview-close {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); font-size: 16px; line-height: 1;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: border-color .15s, color .15s;
+    }
+    .preview-close:hover { border-color: var(--border-hi); color: var(--text); }
+
+    /* WhatsApp-style phone chrome */
+    .preview-phone {
+      background: #0f1720;
+      padding: 16px; flex: 1; overflow-y: auto;
+      display: flex; align-items: flex-start;
+    }
+    .preview-bubble {
+      background: #1e3a2f;
+      border: 1px solid #2d5a44;
+      border-radius: 4px 16px 16px 16px;
+      padding: 12px 14px;
+      max-width: 100%;
+      font-size: 13px; line-height: 1.6;
+      color: #e8f5e9;
+      font-family: 'DM Sans', sans-serif;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .preview-bubble strong { font-weight: 700; color: #ffffff; }
+
+    /* spinner state */
+    .preview-phone.loading {
+      align-items: center; justify-content: center;
+    }
+    .preview-spin {
+      width: 28px; height: 28px;
+      border: 3px solid rgba(255,255,255,.12); border-top-color: #4ade80;
+      border-radius: 50%; animation: spin .8s linear infinite;
+    }
+
+    @media (max-width: 520px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .profile-grid { grid-template-columns: 1fr; }
+      .action-row { flex-direction: column; }
+      .action-row .submit-btn { min-width: 0; }
+      .confirm-actions { flex-direction: column; }
+      .preview-box { max-height: 92vh; border-radius: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="page-loading" id="page-loading">
+  <div class="spin-lg"></div>
+</div>
+
+<div class="wrap" id="main-content" style="display:none">
+
+  <!-- ─── Header ────────────────────────────────────────── -->
+  <header>
+    <div>
+      <div class="logo-eyebrow">Livelo Alert</div>
+      <h1 class="logo-title">Meu<br><span>Painel</span></h1>
+      <p class="logo-sub">Gerencie seus alertas de promoções Livelo.</p>
+    </div>
+    <div class="header-actions">
+      <span class="user-pill" id="user-email">…</span>
+      <button class="danger-btn" onclick="handleLogout()">Sair</button>
+    </div>
+  </header>
+
+  <!-- ─── 1. Status WhatsApp ────────────────────────────── -->
+  <div class="card">
+    <div class="status-row">
+      <div class="status-info">
+        <div class="status-title">Conexão WhatsApp</div>
+        <div class="status-sub" id="scheduler-status">Verificando…</div>
+      </div>
+      <div class="wa-status" id="wa-status" onclick="refreshStatus()" title="Clique para atualizar">
+        <div class="wa-dot"></div>
+        <span id="wa-status-text">Verificando…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 2. Perfil / Preferências ─────────────────────── -->
+  <div class="card" id="profile-card">
+    <div class="section-label">Minhas preferências</div>
+    <div id="profile-loading" style="color:var(--muted);font-size:13px;padding:8px 0">Carregando…</div>
+    <div id="profile-content" style="display:none">
+      <div class="profile-grid" style="margin-bottom:20px">
+        <div class="profile-item">
+          <div class="profile-label">WhatsApp</div>
+          <div class="profile-value accent" id="profile-phone">—</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-label">Frequência</div>
+          <div class="profile-value" id="profile-freq">—</div>
+        </div>
+      </div>
+
+      <div class="profile-item" style="margin-bottom:16px">
+        <div class="profile-label" style="margin-bottom:8px">Categorias <span id="cat-count" style="color:var(--orange)"></span></div>
+        <div class="tag-list" id="cat-tags"></div>
+      </div>
+
+      <div class="profile-item" id="stores-section" style="display:none">
+        <div class="profile-label" style="margin-bottom:8px">Lojas favoritas</div>
+        <div class="tag-list" id="store-tags"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 3. Ações ──────────────────────────────────────── -->
+  <div class="card">
+    <div class="section-label">Ações</div>
+    <div class="action-row">
+      <button class="submit-btn" id="run-btn" onclick="handleRun()">
+        <span class="btn-icon">🔍</span>
+        <span class="btn-label">Buscar promoções agora</span>
+      </button>
+      <button class="secondary-btn" id="preview-btn" onclick="openPreview()">
+        👁️&nbsp; Ver prévia da mensagem
+      </button>
+      <button class="secondary-btn" id="test-wa-btn" onclick="openTestWaConfirm()">
+        📱&nbsp; Testar envio WhatsApp
+      </button>
+      <a href="/setup.html?edit=1" class="secondary-btn" style="text-decoration:none;text-align:center">
+        ✏️&nbsp; Editar preferências
+      </a>
+      <button class="danger-btn" onclick="openCancelConfirm()">
+        🔕&nbsp; Cancelar alertas
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── 4. Logs do sistema ──────────────────────────── -->
+  <div class="card" id="logs-card">
+    <div class="section-label">Logs do sistema</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="secondary-btn" id="logs-btn" onclick="loadLogs()" style="padding:9px 16px;font-size:13px">
+        Ver logs (últimas 50 linhas)
+      </button>
+      <button class="secondary-btn" id="logs-clear-btn" onclick="clearLogs()" style="padding:9px 16px;font-size:13px;display:none">
+        Limpar
+      </button>
+    </div>
+    <div id="logs-output" style="display:none">
+      <pre id="logs-pre" style="
+        background: #0d1117; border: 1px solid var(--border); border-radius: 10px;
+        padding: 14px 16px; margin: 0; max-height: 340px; overflow-y: auto;
+        font-family: 'Menlo', 'Consolas', 'Monaco', monospace; font-size: 11.5px;
+        line-height: 1.7; white-space: pre-wrap; word-break: break-all;
+        color: #c9d1d9;
+      "></pre>
+    </div>
+  </div>
+
+  <!-- ─── Modal de confirmação ────────────────────────── -->
+  <div class="confirm-overlay" id="confirm-overlay" onclick="handleOverlayClick(event)">
+    <div class="confirm-box">
+      <div class="confirm-icon">🔕</div>
+      <div class="confirm-title">Cancelar alertas?</div>
+      <div class="confirm-body">
+        Tem certeza? Você deixará de receber as promoções no WhatsApp.<br>
+        Para reativar, basta fazer login novamente e salvar suas preferências.
+      </div>
+      <div class="confirm-actions">
+        <button class="danger-btn" id="confirm-yes" onclick="handleCancelAlerts()">
+          Sim, cancelar
+        </button>
+        <button class="secondary-btn" onclick="closeCancelConfirm()">
+          Manter alertas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Modal confirmar teste WhatsApp ─────────────────── -->
+  <div class="confirm-overlay" id="test-wa-overlay" onclick="handleTestWaOverlayClick(event)">
+    <div class="confirm-box">
+      <div class="confirm-icon">📱</div>
+      <div class="confirm-title">Enviar mensagem de teste?</div>
+      <div class="confirm-body">
+        Enviar mensagem de teste para o seu WhatsApp agora?<br>
+        Serão usadas as promoções já salvas no banco de hoje.
+      </div>
+      <div class="confirm-actions">
+        <button class="submit-btn" id="test-wa-yes" onclick="handleTestWaSend()" style="flex:1;padding:13px;text-align:center;font-size:14px">
+          Sim, enviar
+        </button>
+        <button class="secondary-btn" onclick="closeTestWaConfirm()" style="flex:1;padding:13px;text-align:center;font-size:14px">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Modal prévia da mensagem ───────────────────────── -->
+  <div class="preview-overlay" id="preview-overlay" onclick="handlePreviewOverlayClick(event)">
+    <div class="preview-box">
+      <div class="preview-header">
+        <span class="preview-header-title">📱 Prévia da mensagem</span>
+        <button class="preview-close" onclick="closePreview()" aria-label="Fechar">✕</button>
+      </div>
+      <div class="preview-phone loading" id="preview-phone">
+        <div class="preview-spin"></div>
+      </div>
+    </div>
+  </div>
+
+
+</div><!-- /wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+let sb, session, userProfile;
+
+async function initSupabase() {
+  const res = await fetch('/api/config');
+  const { supabaseUrl, supabaseAnonKey } = await res.json();
+  sb = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  window.location.replace('/login.html');
+}
+
+/* ══════════════════════════════════════════════════════
+   STATUS
+══════════════════════════════════════════════════════ */
+async function refreshStatus() {
+  const el  = document.getElementById('wa-status');
+  const txt = document.getElementById('wa-status-text');
+  const sched = document.getElementById('scheduler-status');
+  try {
+    const r = await fetch('/api/status', { signal: AbortSignal.timeout(4000) });
+    const d = await r.json();
+    const ok = d?.whatsapp === 'connected';
+    el.className = 'wa-status ' + (ok ? 'connected' : 'disconnected');
+    txt.textContent = ok ? 'Conectado' : 'Desconectado';
+    sched.textContent = d?.scheduler === 'active'
+      ? `Scheduler ativo · cron: ${d.schedule}`
+      : 'Scheduler pausado';
+  } catch {
+    el.className = 'wa-status disconnected';
+    txt.textContent = 'Servidor offline';
+    sched.textContent = '—';
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   PROFILE
+══════════════════════════════════════════════════════ */
+async function loadProfile() {
+  const res = await fetch('/api/users/me', {
+    headers: { Authorization: `Bearer ${session.access_token}` }
+  });
+
+  document.getElementById('profile-loading').style.display = 'none';
+
+  if (res.status === 404) {
+    document.getElementById('profile-content').innerHTML =
+      `<div style="color:var(--muted);font-size:13px">
+        Você ainda não configurou seus alertas.<br>
+        <a href="/setup.html" style="color:var(--orange);text-decoration:none;font-weight:500">Configurar agora →</a>
+      </div>`;
+    document.getElementById('profile-content').style.display = 'block';
+    return null;
+  }
+
+  if (!res.ok) { document.getElementById('profile-content').style.display = 'none'; return null; }
+
+  const user = await res.json();
+  userProfile = user;
+
+  // Phone
+  const phone = user.phone || '—';
+  document.getElementById('profile-phone').textContent = '+55 ' + phone.replace(/(\d{2})(\d{5})(\d{4})/, '$1 $2-$3');
+
+  // Frequency
+  const DAY_NAMES = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const freqLabel = user.frequency === 'weekly'
+    ? `Semanal (${DAY_NAMES[user.day_of_week] ?? '?'}) às ${String(user.send_hour).padStart(2,'0')}h`
+    : `Diária às ${String(user.send_hour).padStart(2,'0')}h`;
+  document.getElementById('profile-freq').textContent = freqLabel;
+
+  // Categories
+  const cats = user.categories || [];
+  document.getElementById('cat-count').textContent = `(${cats.length})`;
+  const MAX_CATS = 12;
+  const tagsHtml = cats.slice(0, MAX_CATS).map(c =>
+    `<span class="tag">${esc(c)}</span>`
+  ).join('') + (cats.length > MAX_CATS ? `<span class="tag more">+${cats.length - MAX_CATS} mais</span>` : '');
+  document.getElementById('cat-tags').innerHTML = tagsHtml;
+
+  // Stores
+  const stores = user.favorite_stores || [];
+  if (stores.length > 0) {
+    document.getElementById('stores-section').style.display = 'block';
+    document.getElementById('store-tags').innerHTML = stores.map(s =>
+      `<span class="tag orange">${esc(s)}</span>`
+    ).join('');
+  }
+
+  document.getElementById('profile-content').style.display = 'block';
+  return user;
+}
+
+/* ══════════════════════════════════════════════════════
+   RUN AGENT
+══════════════════════════════════════════════════════ */
+async function handleRun() {
+  if (!userProfile?.phone) {
+    showToast('Configure seu número de WhatsApp primeiro.', 'warn');
+    return;
+  }
+
+  const btn   = document.getElementById('run-btn');
+  const label = btn.querySelector('.btn-label');
+  btn.disabled = true;
+  label.innerHTML = 'Buscando… <span class="spin-inline"></span>';
+
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: userProfile.phone }),
+    });
+    const data = await res.json();
+    showToast('✓ ' + (data.message || 'Agente iniciado!'));
+  } catch (err) {
+    showToast('Erro ao acionar o agente.', 'warn');
+  } finally {
+    btn.disabled = false;
+    label.textContent = 'Buscar promoções agora';
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   CANCEL ALERTS
+══════════════════════════════════════════════════════ */
+function openCancelConfirm() {
+  document.getElementById('confirm-overlay').classList.add('visible');
+}
+
+function closeCancelConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('visible');
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('confirm-overlay')) closeCancelConfirm();
+}
+
+async function handleCancelAlerts() {
+  const btn = document.getElementById('confirm-yes');
+  btn.disabled = true;
+  btn.textContent = 'Cancelando…';
+
+  try {
+    const res = await fetch('/api/users/me', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ active: false }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Erro ao cancelar');
+    }
+
+    closeCancelConfirm();
+    showToast('✓ Alertas cancelados.');
+    setTimeout(async () => {
+      await sb.auth.signOut();
+      window.location.replace('/login.html');
+    }, 2000);
+  } catch (err) {
+    showToast('Erro: ' + err.message, 'warn');
+    btn.disabled = false;
+    btn.textContent = 'Sim, cancelar';
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════════ */
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+let toastTimer;
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type}`;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ══════════════════════════════════════════════════════
+   PREVIEW MODAL
+══════════════════════════════════════════════════════ */
+
+/**
+ * Converte a sintaxe de formatação do WhatsApp para HTML seguro.
+ * *texto* → <strong>texto</strong>
+ * _texto_ → <em>texto</em>
+ * Quebras de linha são preservadas via white-space: pre-wrap no CSS.
+ */
+function renderWhatsAppText(raw) {
+  // Escapa HTML primeiro para evitar XSS
+  const escaped = raw
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // *negrito*
+  const bolded = escaped.replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
+  // _itálico_
+  return bolded.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+}
+
+async function openPreview() {
+  const overlay = document.getElementById('preview-overlay');
+  const phone   = document.getElementById('preview-phone');
+
+  // Reset para spinner
+  phone.className = 'preview-phone loading';
+  phone.innerHTML = '<div class="preview-spin"></div>';
+  overlay.classList.add('visible');
+
+  try {
+    const res = await fetch('/api/preview', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Erro ao gerar prévia');
+
+    phone.className = 'preview-phone';
+    phone.innerHTML = `<div class="preview-bubble">${renderWhatsAppText(data.message)}</div>`;
+  } catch (err) {
+    phone.className = 'preview-phone';
+    phone.innerHTML = `<div class="preview-bubble" style="color:#f87171;border-color:#5a2d2d;background:#2e1a1a">
+      ❌ ${esc(err.message)}
+    </div>`;
+  }
+}
+
+function closePreview() {
+  document.getElementById('preview-overlay').classList.remove('visible');
+}
+
+function handlePreviewOverlayClick(e) {
+  if (e.target === document.getElementById('preview-overlay')) closePreview();
+}
+
+/* ══════════════════════════════════════════════════════
+   TEST WHATSAPP
+══════════════════════════════════════════════════════ */
+function openTestWaConfirm() {
+  document.getElementById('test-wa-overlay').classList.add('visible');
+}
+
+function closeTestWaConfirm() {
+  document.getElementById('test-wa-overlay').classList.remove('visible');
+}
+
+function handleTestWaOverlayClick(e) {
+  if (e.target === document.getElementById('test-wa-overlay')) closeTestWaConfirm();
+}
+
+async function handleTestWaSend() {
+  const btn = document.getElementById('test-wa-yes');
+  btn.disabled = true;
+  btn.innerHTML = 'Enviando… <span class="spin-inline"></span>';
+
+  try {
+    const res = await fetch('/api/test-whatsapp', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json();
+
+    closeTestWaConfirm();
+
+    if (!res.ok) throw new Error(data.error || 'Erro ao enviar');
+    showToast('✅ Mensagem enviada! Verifique seu WhatsApp');
+  } catch (err) {
+    closeTestWaConfirm();
+    showToast('Erro: ' + err.message, 'warn');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sim, enviar';
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   LOGS
+══════════════════════════════════════════════════════ */
+async function loadLogs() {
+  const btn = document.getElementById('logs-btn');
+  btn.disabled = true;
+  btn.textContent = 'Carregando…';
+
+  try {
+    const res = await fetch('/api/logs?lines=50', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao buscar logs');
+
+    const pre = document.getElementById('logs-pre');
+    const output = document.getElementById('logs-output');
+
+    if (!data.logs || data.logs.length === 0) {
+      pre.innerHTML = '<span style="color:var(--muted)">Nenhum log registrado hoje.</span>';
+    } else {
+      pre.innerHTML = data.logs.map(line => {
+        const escaped = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        if (/\[ERROR\]/i.test(escaped))  return `<span style="color:#f87171">${escaped}</span>`;
+        if (/\[WARN\]/i.test(escaped))   return `<span style="color:#fbbf24">${escaped}</span>`;
+        return escaped;
+      }).join('\n');
+      // Scroll to bottom
+      pre.scrollTop = pre.scrollHeight;
+    }
+
+    output.style.display = 'block';
+    document.getElementById('logs-clear-btn').style.display = 'inline-flex';
+  } catch (err) {
+    showToast('Erro ao carregar logs: ' + err.message, 'warn');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Atualizar logs';
+  }
+}
+
+function clearLogs() {
+  document.getElementById('logs-output').style.display = 'none';
+  document.getElementById('logs-pre').innerHTML = '';
+  document.getElementById('logs-clear-btn').style.display = 'none';
+  document.getElementById('logs-btn').textContent = 'Ver logs (últimas 50 linhas)';
+}
+
+/* ══════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await initSupabase();
+    const { data: { session: s } } = await sb.auth.getSession();
+    if (!s) { window.location.replace('/login.html'); return; }
+    session = s;
+
+    document.getElementById('user-email').textContent = s.user.email;
+
+    document.getElementById('page-loading').classList.add('hidden');
+    document.getElementById('main-content').style.display = 'block';
+
+    // Load all data in parallel
+    await Promise.all([
+      refreshStatus(),
+      loadProfile(),
+    ]);
+  } catch (err) {
+    console.error('Boot error:', err);
+    document.getElementById('page-loading').classList.add('hidden');
+    document.getElementById('main-content').style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

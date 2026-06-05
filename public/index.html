@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <script>window.location.replace('/login.html');</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Livelo Alert — Promoções no WhatsApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0b0c0e;
+      --surface:   #131416;
+      --card:      #1a1b1e;
+      --border:    #2a2b2f;
+      --border-hi: #3d3e44;
+      --orange:    #ff6d00;
+      --orange-lo: rgba(255,109,0,.12);
+      --orange-md: rgba(255,109,0,.25);
+      --gold:      #ffb84d;
+      --text:      #f2f2f3;
+      --muted:     #767880;
+      --chip-bg:   #212227;
+      --radius:    12px;
+      --radius-sm: 8px;
+      --shadow:    0 4px 24px rgba(0,0,0,.45);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Grain overlay ─────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: .022;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ─── Glow blobs ────────────────────────────────────────────── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 {
+      width: 560px; height: 560px;
+      background: radial-gradient(circle, rgba(255,109,0,.13) 0%, transparent 70%);
+      top: -180px; right: -160px;
+    }
+    .blob-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(255,184,77,.07) 0%, transparent 70%);
+      bottom: 10%; left: -120px;
+    }
+
+    /* ─── Layout ────────────────────────────────────────────────── */
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+
+    /* ─── Header ────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 52px;
+      animation: fadeUp .35s ease both;
+    }
+    .logo-eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 6px;
+    }
+    .logo-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(28px, 6vw, 40px);
+      font-weight: 800;
+      line-height: 1.05;
+      color: var(--text);
+      letter-spacing: -.02em;
+    }
+    .logo-title span { color: var(--orange); }
+    .logo-sub {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    /* WhatsApp status pill */
+    .wa-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 40px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: border-color .2s;
+      user-select: none;
+    }
+    .wa-status:hover { border-color: var(--border-hi); }
+    .wa-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #444;
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+    .wa-status.connected   { color: #4ade80; border-color: rgba(74,222,128,.25); }
+    .wa-status.connected .wa-dot { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+    .wa-status.disconnected { color: #f87171; border-color: rgba(248,113,113,.2); }
+    .wa-status.disconnected .wa-dot { background: #f87171; }
+
+    /* ─── Section label ─────────────────────────────────────────── */
+    .section-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── Card ──────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 16px;
+      transition: border-color .25s;
+      opacity: 0;
+      animation: fadeUp .45s ease both;
+    }
+    .card:focus-within { border-color: var(--border-hi); }
+    .card:nth-child(1) { animation-delay: .05s; }
+    .card:nth-child(2) { animation-delay: .12s; }
+    .card:nth-child(3) { animation-delay: .19s; }
+    .card:nth-child(4) { animation-delay: .26s; }
+    .card:nth-child(5) { animation-delay: .33s; }
+
+    /* ─── Phone input ───────────────────────────────────────────── */
+    .phone-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .phone-wrap:focus-within {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px var(--orange-lo);
+    }
+    .phone-flag {
+      padding: 0 14px;
+      font-size: 20px;
+      line-height: 52px;
+      background: var(--chip-bg);
+      border-right: 1px solid var(--border);
+      user-select: none;
+    }
+    .phone-prefix {
+      padding: 0 8px 0 14px;
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 52px;
+      white-space: nowrap;
+    }
+    #phone-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 0 14px 0 4px;
+      height: 52px;
+      letter-spacing: .02em;
+    }
+    #phone-input::placeholder { color: var(--muted); font-weight: 300; }
+
+    /* ─── Category chips ────────────────────────────────────────── */
+    .chips-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .chip-action {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      padding: 5px 12px;
+      border-radius: 40px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .chip-action:hover { border-color: var(--orange); color: var(--orange); }
+    .chips-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: 40px;
+      border: 1px solid var(--border);
+      background: var(--chip-bg);
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--orange); color: var(--text); }
+    .chip.selected {
+      background: var(--orange-lo);
+      border-color: var(--orange);
+      color: var(--orange);
+      font-weight: 600;
+    }
+    .chips-count {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    .chips-count strong { color: var(--orange); }
+
+    /* ─── Store autocomplete ────────────────────────────────────── */
+    .store-search-wrap { position: relative; }
+    .store-search-input-row {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .store-search-input-row:focus-within {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px var(--orange-lo);
+    }
+    .store-search-icon {
+      padding: 0 14px;
+      color: var(--muted);
+      line-height: 48px;
+      font-size: 18px;
+      font-weight: 300;
+    }
+    #store-search {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      height: 48px;
+      padding: 0 14px 0 0;
+    }
+    #store-search::placeholder { color: var(--muted); }
+    .autocomplete-list {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0; right: 0;
+      background: var(--card);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-sm);
+      max-height: 230px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: var(--shadow);
+      display: none;
+    }
+    .autocomplete-list.open { display: block; }
+    .autocomplete-item {
+      padding: 10px 16px;
+      font-size: 13.5px;
+      cursor: pointer;
+      transition: background .1s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .autocomplete-item:hover, .autocomplete-item.active {
+      background: var(--orange-lo);
+      color: var(--text);
+    }
+    .cat-badge {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .store-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 12px;
+    }
+    .store-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 5px 10px 5px 12px;
+      border-radius: 40px;
+      background: var(--orange-lo);
+      border: 1px solid var(--orange);
+      color: var(--orange);
+    }
+    .store-tag button {
+      background: none;
+      border: none;
+      color: var(--orange);
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      padding: 0;
+      opacity: .7;
+      transition: opacity .15s;
+    }
+    .store-tag button:hover { opacity: 1; }
+
+    /* ─── Frequency ─────────────────────────────────────────────── */
+    .freq-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .freq-tab {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all .2s;
+    }
+    .freq-tab:hover { border-color: var(--border-hi); color: var(--text); }
+    .freq-tab.active {
+      border-color: var(--orange);
+      background: var(--orange-lo);
+      color: var(--orange);
+      font-weight: 600;
+    }
+    .freq-options { display: none; }
+    .freq-options.visible { display: flex; gap: 12px; flex-wrap: wrap; }
+    .freq-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 140px;
+    }
+    .freq-field label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .freq-field select,
+    .freq-field input[type="time"] {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      transition: border-color .2s, box-shadow .2s;
+      width: 100%;
+    }
+    .freq-field select:focus,
+    .freq-field input[type="time"]:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px var(--orange-lo);
+    }
+    .freq-field select option { background: var(--card); }
+
+    /* ─── Submit ────────────────────────────────────────────────── */
+    .submit-btn {
+      width: 100%;
+      padding: 17px 24px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--orange);
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform .15s, box-shadow .2s, opacity .2s;
+      box-shadow: 0 4px 20px rgba(255,109,0,.35);
+    }
+    .submit-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(255,109,0,.45); }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .submit-btn .btn-icon { margin-right: 8px; font-size: 17px; vertical-align: -2px; }
+    .spin-inline {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin-left: 10px;
+      vertical-align: -2px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Error text ────────────────────────────────────────────── */
+    .field-error {
+      font-size: 12px;
+      color: #f87171;
+      margin-top: 6px;
+      display: none;
+    }
+    .field-error.visible { display: block; }
+
+    /* ─── WA Preview ────────────────────────────────────────────── */
+    .preview-section {
+      margin-top: 8px;
+      animation: fadeUp .4s ease both;
+    }
+    .wa-bubble-wrap {
+      background: #161b27;
+      border: 1px solid #1e2535;
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .wa-chrome-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #1e2535;
+    }
+    .wa-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .wa-contact-name { font-size: 13.5px; font-weight: 600; color: var(--text); }
+    .wa-contact-sub  { font-size: 11px; color: #4ade80; margin-top: 1px; }
+    .wa-bubble {
+      background: #1e2a3a;
+      border-radius: 4px 14px 14px 14px;
+      padding: 14px 16px;
+      max-width: 100%;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+      position: relative;
+    }
+    .wa-bubble::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -7px;
+      width: 0; height: 0;
+      border-top: 0 solid transparent;
+      border-right: 8px solid #1e2a3a;
+      border-bottom: 8px solid transparent;
+    }
+    .wa-bubble pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: #c9d1db;
+    }
+    .wa-time {
+      display: block;
+      text-align: right;
+      font-size: 11px;
+      color: #4b5563;
+      margin-top: 8px;
+    }
+
+    /* ─── Toast ─────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a2e22;
+      border: 1px solid #4ade80;
+      color: #4ade80;
+      padding: 12px 22px;
+      border-radius: 40px;
+      font-size: 13.5px;
+      font-weight: 500;
+      z-index: 1000;
+      opacity: 0;
+      transition: all .3s ease;
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ─── Scrollbar ─────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+
+    /* ─── Animations ────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Responsive ────────────────────────────────────────────── */
+    @media (max-width: 520px) {
+      .wrap { padding: 28px 14px 60px; }
+      header { flex-direction: column; align-items: flex-start; }
+      .card { padding: 20px 16px; }
+      .freq-tabs { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="wrap">
+
+  <!-- ─── Header ─────────────────────────── -->
+  <header>
+    <div class="logo-block">
+      <div class="logo-eyebrow">Livelo Alert</div>
+      <h1 class="logo-title">Promoções<br>no <span>WhatsApp</span></h1>
+      <p class="logo-sub">Receba as melhores ofertas dos 259 parceiros Livelo.</p>
+    </div>
+    <div class="wa-status" id="wa-status" onclick="checkStatus()" title="Clique para verificar">
+      <div class="wa-dot"></div>
+      <span id="wa-status-text">Verificando…</span>
+    </div>
+  </header>
+
+  <!-- ─── 1. Número ──────────────────────── -->
+  <div class="card">
+    <div class="section-label">Número WhatsApp</div>
+    <div class="phone-wrap">
+      <span class="phone-flag">🇧🇷</span>
+      <span class="phone-prefix">+55</span>
+      <input
+        type="tel"
+        id="phone-input"
+        placeholder="11 99988 7766"
+        maxlength="11"
+        autocomplete="tel"
+        inputmode="numeric"
+      />
+    </div>
+    <div class="field-error" id="phone-error">Informe um número válido com DDD (ex: 11999887766).</div>
+  </div>
+
+  <!-- ─── 2. Categorias ──────────────────── -->
+  <div class="card">
+    <div class="section-label">Categorias de interesse</div>
+    <div class="chips-toolbar">
+      <button class="chip-action" onclick="selectAllCats()">Selecionar todas</button>
+      <button class="chip-action" onclick="clearCats()">Limpar seleção</button>
+    </div>
+    <div class="chips-grid" id="chips-grid"></div>
+    <div class="chips-count" id="chips-count"><strong>0</strong> categorias selecionadas</div>
+  </div>
+
+  <!-- ─── 3. Lojas favoritas ─────────────── -->
+  <div class="card">
+    <div class="section-label">
+      Lojas favoritas
+      <span style="color:var(--muted);font-size:10px;letter-spacing:.03em;text-transform:none;font-weight:400">opcional</span>
+    </div>
+    <div class="store-search-wrap">
+      <div class="store-search-input-row">
+        <span class="store-search-icon">⌕</span>
+        <input
+          type="text"
+          id="store-search"
+          placeholder="Buscar loja… ex: Netshoes, Sephora, Nike"
+          autocomplete="off"
+        />
+      </div>
+      <div class="autocomplete-list" id="autocomplete-list"></div>
+    </div>
+    <div class="store-tags" id="store-tags"></div>
+  </div>
+
+  <!-- ─── 4. Frequência ─────────────────── -->
+  <div class="card">
+    <div class="section-label">Frequência de envio</div>
+    <div class="freq-tabs">
+      <button class="freq-tab active" id="tab-daily" onclick="setFreq('daily')">
+        📅&nbsp; Diariamente
+      </button>
+      <button class="freq-tab" id="tab-weekly" onclick="setFreq('weekly')">
+        📆&nbsp; Semanalmente
+      </button>
+    </div>
+
+    <div class="freq-options visible" id="opts-daily">
+      <div class="freq-field">
+        <label>Horário de envio</label>
+        <input type="time" id="daily-time" value="08:00" />
+      </div>
+    </div>
+
+    <div class="freq-options" id="opts-weekly">
+      <div class="freq-field">
+        <label>Dia da semana</label>
+        <select id="weekly-day">
+          <option value="1">Segunda-feira</option>
+          <option value="2">Terça-feira</option>
+          <option value="3">Quarta-feira</option>
+          <option value="4">Quinta-feira</option>
+          <option value="5">Sexta-feira</option>
+          <option value="6">Sábado</option>
+          <option value="0">Domingo</option>
+        </select>
+      </div>
+      <div class="freq-field">
+        <label>Horário de envio</label>
+        <input type="time" id="weekly-time" value="09:00" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 5. Ação ────────────────────────── -->
+  <div class="card">
+    <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">
+      <span class="btn-icon">💬</span>
+      <span class="btn-label">Buscar promoções e enviar no WhatsApp</span>
+    </button>
+  </div>
+
+  <!-- ─── 6. Prévia ─────────────────────── -->
+  <div class="preview-section" id="preview-section" style="display:none;">
+    <div class="section-label" style="margin-bottom:14px;">Prévia da mensagem</div>
+    <div class="wa-bubble-wrap">
+      <div class="wa-chrome-bar">
+        <div class="wa-avatar">💎</div>
+        <div>
+          <div class="wa-contact-name">Livelo Alert</div>
+          <div class="wa-contact-sub">online agora</div>
+        </div>
+      </div>
+      <div class="wa-bubble">
+        <pre id="preview-text"></pre>
+        <span class="wa-time" id="preview-time"></span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   DATA
+══════════════════════════════════════════════════════════════ */
+const CATEGORIES = [
+  "Alimentos e Bebidas","Aluguel de Carros","Bebidas","Bem estar",
+  "Calçados","Câmbio","Casa e Decoração","Chip de Celular",
+  "Construção e Ferramentas","Cruzeiros","Eletrodomésticos","Eletrônicos",
+  "Eletroportáteis","Esporte e Lazer","Gift Card","Hotéis","Infantil",
+  "Ingressos e Passeios","Malas","Moda e Acessórios","Moda e Beleza",
+  "Ônibus","Outros","Papelaria","Passagens Aéreas",
+  "Perfumaria e Cosméticos","Pet Shop","Saúde","Saúde e Beleza",
+  "Seguro Viagem","Seguros","Serviços","Viagem e Serviços"
+];
+
+const STORES = [
+  {store:"ABC da Construcao",category:"Construção e Ferramentas"},
+  {store:"ACER",category:"Eletrônicos"},
+  {store:"ADCOS",category:"Saúde e Beleza"},
+  {store:"AMOBELEZA",category:"Perfumaria e Cosméticos"},
+  {store:"Abelha Rainha",category:"Alimentos e Bebidas"},
+  {store:"Agaxtur Cruzeiros",category:"Cruzeiros"},
+  {store:"Aliexpress",category:"Outros"},
+  {store:"Allianz",category:"Seguros"},
+  {store:"Alura",category:"Serviços"},
+  {store:"Angeloni",category:"Alimentos e Bebidas"},
+  {store:"Aramis",category:"Moda e Acessórios"},
+  {store:"Asics",category:"Esporte e Lazer"},
+  {store:"Assinatura Coffee Mais",category:"Bebidas"},
+  {store:"Assist Card Seguro-Viagem",category:"Seguro Viagem"},
+  {store:"Avon",category:"Perfumaria e Cosméticos"},
+  {store:"BO.BÔ",category:"Moda e Acessórios"},
+  {store:"Bagaggio",category:"Malas"},
+  {store:"Baianão",category:"Eletrodomésticos"},
+  {store:"Bankei",category:"Câmbio"},
+  {store:"Basicamente",category:"Moda e Beleza"},
+  {store:"Basico.com",category:"Moda e Acessórios"},
+  {store:"Beach Park Hospedagens",category:"Hotéis"},
+  {store:"Beach Park Ingressos",category:"Ingressos e Passeios"},
+  {store:"Beep",category:"Câmbio"},
+  {store:"Beleza na Web PRO",category:"Perfumaria e Cosméticos"},
+  {store:"Beleza na web",category:"Perfumaria e Cosméticos"},
+  {store:"Beto Carrero World",category:"Ingressos e Passeios"},
+  {store:"Beyoung",category:"Moda e Acessórios"},
+  {store:"Bibi",category:"Infantil"},
+  {store:"Bobstore",category:"Moda e Acessórios"},
+  {store:"Bombay Herbs & Spices",category:"Alimentos e Bebidas"},
+  {store:"Booking com",category:"Hotéis"},
+  {store:"Bradesco Capitalização",category:"Seguros"},
+  {store:"Buddha Spa",category:"Bem estar"},
+  {store:"Budget",category:"Aluguel de Carros"},
+  {store:"Bulbe Energia",category:"Serviços"},
+  {store:"Buser",category:"Ônibus"},
+  {store:"CEA",category:"Moda e Acessórios"},
+  {store:"Cabana Magazine",category:"Casa e Decoração"},
+  {store:"Caffeine Army",category:"Esporte e Lazer"},
+  {store:"Café Orfeu",category:"Bebidas"},
+  {store:"Camicado",category:"Casa e Decoração"},
+  {store:"Carrefour Mercado",category:"Alimentos e Bebidas"},
+  {store:"Carrefour Shopping",category:"Outros"},
+  {store:"Carters",category:"Infantil"},
+  {store:"Cartão de Todos",category:"Saúde"},
+  {store:"Casas Bahia",category:"Eletrodomésticos"},
+  {store:"Centauro",category:"Esporte e Lazer"},
+  {store:"Cestas Michelli",category:"Alimentos e Bebidas"},
+  {store:"Chip eSim Travalex",category:"Chip de Celular"},
+  {store:"Ciclic Seguro Celular",category:"Seguros"},
+  {store:"Ciclic Seguro Viagem",category:"Seguro Viagem"},
+  {store:"Cinemark",category:"Ingressos e Passeios"},
+  {store:"Civitatis",category:"Ingressos e Passeios"},
+  {store:"Claro",category:"Serviços"},
+  {store:"ClickBus",category:"Ônibus"},
+  {store:"Coffee Mais",category:"Bebidas"},
+  {store:"Colcci",category:"Moda e Acessórios"},
+  {store:"Coliseu",category:"Ingressos e Passeios"},
+  {store:"Consorcio Magalu",category:"Seguros"},
+  {store:"Converse",category:"Calçados"},
+  {store:"Cook Eletroraro",category:"Eletrodomésticos"},
+  {store:"Coris",category:"Seguro Viagem"},
+  {store:"Creditas",category:"Serviços"},
+  {store:"Crocs",category:"Calçados"},
+  {store:"Câmbio Online",category:"Câmbio"},
+  {store:"Dafiti",category:"Moda e Acessórios"},
+  {store:"Dako",category:"Eletrodomésticos"},
+  {store:"Decathlon",category:"Esporte e Lazer"},
+  {store:"Decolar",category:"Passagens Aéreas"},
+  {store:"Democrata",category:"Calçados"},
+  {store:"Divvino",category:"Bebidas"},
+  {store:"Dr Jones",category:"Moda e Beleza"},
+  {store:"Drogaria Sao Paulo",category:"Saúde"},
+  {store:"Drogarias Pacheco",category:"Saúde"},
+  {store:"Dudalina",category:"Moda e Acessórios"},
+  {store:"Dufrio",category:"Eletrodomésticos"},
+  {store:"EDP",category:"Serviços"},
+  {store:"Easy Live",category:"Ingressos e Passeios"},
+  {store:"Ellus",category:"Moda e Acessórios"},
+  {store:"Embracon",category:"Seguros"},
+  {store:"Estapar",category:"Serviços"},
+  {store:"Estoque",category:"Moda e Acessórios"},
+  {store:"Eudora",category:"Perfumaria e Cosméticos"},
+  {store:"Euro",category:"Câmbio"},
+  {store:"Extra",category:"Eletrodomésticos"},
+  {store:"Faber-Castell",category:"Papelaria"},
+  {store:"Farmacias App",category:"Saúde"},
+  {store:"Fast Shop",category:"Eletrônicos"},
+  {store:"Fila",category:"Esporte e Lazer"},
+  {store:"Foco",category:"Serviços"},
+  {store:"Forever Liss",category:"Saúde e Beleza"},
+  {store:"Frigelar",category:"Eletrodomésticos"},
+  {store:"Fóssil",category:"Moda e Acessórios"},
+  {store:"Gazin",category:"Eletrodomésticos"},
+  {store:"Giuliana Flores",category:"Outros"},
+  {store:"Globoplay",category:"Serviços"},
+  {store:"Go case",category:"Eletrônicos"},
+  {store:"Granado",category:"Saúde e Beleza"},
+  {store:"Grupo Dreams",category:"Hotéis"},
+  {store:"Guess",category:"Moda e Acessórios"},
+  {store:"Guldi",category:"Câmbio"},
+  {store:"HERO SEGURO VIAGEM",category:"Seguro Viagem"},
+  {store:"Havaianas",category:"Calçados"},
+  {store:"Hering",category:"Moda e Acessórios"},
+  {store:"Hering Outlet",category:"Moda e Acessórios"},
+  {store:"Hero Seguro Celular",category:"Seguros"},
+  {store:"Hertz Internacional",category:"Aluguel de Carros"},
+  {store:"Home Angels",category:"Serviços"},
+  {store:"Hope",category:"Moda e Acessórios"},
+  {store:"Hope Resort",category:"Hotéis"},
+  {store:"Horas Magicas",category:"Viagem e Serviços"},
+  {store:"Hot Beach",category:"Hotéis"},
+  {store:"Hoteis com",category:"Hotéis"},
+  {store:"Hotel Nacional",category:"Hotéis"},
+  {store:"Imaginarium",category:"Casa e Decoração"},
+  {store:"Individual",category:"Moda e Acessórios"},
+  {store:"Insider Store",category:"Moda e Acessórios"},
+  {store:"John John",category:"Moda e Acessórios"},
+  {store:"Kabum!",category:"Eletrônicos"},
+  {store:"Kaligo",category:"Hotéis"},
+  {store:"Klabin ForYou",category:"Serviços"},
+  {store:"Klubi Auto",category:"Seguros"},
+  {store:"Klubi Celular",category:"Seguros"},
+  {store:"Klubi Imóvel",category:"Seguros"},
+  {store:"Klubi Moto",category:"Seguros"},
+  {store:"Klubi Viagem",category:"Seguros"},
+  {store:"LE LIS",category:"Moda e Acessórios"},
+  {store:"LEGO",category:"Infantil"},
+  {store:"LIVE!",category:"Ingressos e Passeios"},
+  {store:"Lacoste",category:"Moda e Acessórios"},
+  {store:"Liga Vitória - Seguro de Viagem",category:"Seguro Viagem"},
+  {store:"Liga Vitória Consórcio",category:"Seguros"},
+  {store:"Liga Vitória Seguro Auto",category:"Seguros"},
+  {store:"Liga Vitória Seguro Moto",category:"Seguros"},
+  {store:"Liga Vitória Seguro Residencial",category:"Seguros"},
+  {store:"Liga Vitória Seguro de Vida",category:"Seguros"},
+  {store:"Liz",category:"Moda e Acessórios"},
+  {store:"Localiza",category:"Aluguel de Carros"},
+  {store:"Localiza Internacional",category:"Aluguel de Carros"},
+  {store:"Localiza Meoo",category:"Aluguel de Carros"},
+  {store:"Loccitane",category:"Perfumaria e Cosméticos"},
+  {store:"Loccitane au Bresil",category:"Perfumaria e Cosméticos"},
+  {store:"Loungerie",category:"Moda e Acessórios"},
+  {store:"Luxury Loyalty",category:"Viagem e Serviços"},
+  {store:"MAPFRE Seguro Auto",category:"Seguros"},
+  {store:"Magalu",category:"Eletrodomésticos"},
+  {store:"Maltacor",category:"Construção e Ferramentas"},
+  {store:"Malwee",category:"Moda e Acessórios"},
+  {store:"Max Titanium",category:"Esporte e Lazer"},
+  {store:"MaxRacer",category:"Esporte e Lazer"},
+  {store:"MedSênior",category:"Saúde"},
+  {store:"Meia Sola",category:"Calçados"},
+  {store:"Mercado Livre",category:"Outros"},
+  {store:"Mevo Farma",category:"Saúde"},
+  {store:"Midea",category:"Eletrodomésticos"},
+  {store:"Mistral",category:"Bebidas"},
+  {store:"Mizuno",category:"Esporte e Lazer"},
+  {store:"Mobifácil",category:"Chip de Celular"},
+  {store:"Mobills",category:"Serviços"},
+  {store:"Mobly",category:"Casa e Decoração"},
+  {store:"Mondaine",category:"Moda e Acessórios"},
+  {store:"Monte Carlo",category:"Moda e Acessórios"},
+  {store:"Morana",category:"Moda e Acessórios"},
+  {store:"Movida",category:"Aluguel de Carros"},
+  {store:"Mycon Consórcio Digital",category:"Seguros"},
+  {store:"Nars",category:"Perfumaria e Cosméticos"},
+  {store:"Natura",category:"Perfumaria e Cosméticos"},
+  {store:"Netshoes",category:"Esporte e Lazer"},
+  {store:"New Balance",category:"Esporte e Lazer"},
+  {store:"Next Seguro Viagem",category:"Seguro Viagem"},
+  {store:"Nike",category:"Esporte e Lazer"},
+  {store:"O Boticario",category:"Perfumaria e Cosméticos"},
+  {store:"O.U.i Paris",category:"Perfumaria e Cosméticos"},
+  {store:"Oceane",category:"Saúde e Beleza"},
+  {store:"Oficina",category:"Moda e Acessórios"},
+  {store:"Olympikus",category:"Calçados"},
+  {store:"Osklen",category:"Moda e Acessórios"},
+  {store:"Outback",category:"Alimentos e Bebidas"},
+  {store:"Oxford",category:"Papelaria"},
+  {store:"Pado",category:"Casa e Decoração"},
+  {store:"PerfectDraft (Ambev)",category:"Bebidas"},
+  {store:"Petlove",category:"Pet Shop"},
+  {store:"Petlove Saúde",category:"Pet Shop"},
+  {store:"Petz",category:"Pet Shop"},
+  {store:"Piatan Natural",category:"Saúde e Beleza"},
+  {store:"Playstation",category:"Eletrônicos"},
+  {store:"PneuStore",category:"Serviços"},
+  {store:"Pontofrio",category:"Eletrodomésticos"},
+  {store:"Portal das Malas",category:"Malas"},
+  {store:"Portallar",category:"Eletrodomésticos"},
+  {store:"Porto Seguro",category:"Seguros"},
+  {store:"Posthaus",category:"Moda e Acessórios"},
+  {store:"Probiótica",category:"Esporte e Lazer"},
+  {store:"Puket",category:"Moda e Acessórios"},
+  {store:"Pura Vida",category:"Esporte e Lazer"},
+  {store:"Qcompra",category:"Outros"},
+  {store:"Quem Disse, Berenice?",category:"Perfumaria e Cosméticos"},
+  {store:"Quero Passagem",category:"Passagens Aéreas"},
+  {store:"Quero-Quero",category:"Eletrodomésticos"},
+  {store:"Quintess",category:"Viagem e Serviços"},
+  {store:"Renner",category:"Moda e Acessórios"},
+  {store:"Rentalcars",category:"Aluguel de Carros"},
+  {store:"Rentcars",category:"Aluguel de Carros"},
+  {store:"Reserva",category:"Moda e Acessórios"},
+  {store:"Reservecar",category:"Aluguel de Carros"},
+  {store:"Riachuelo",category:"Moda e Acessórios"},
+  {store:"Richards",category:"Moda e Acessórios"},
+  {store:"Salinas",category:"Moda e Acessórios"},
+  {store:"Sam's Club",category:"Alimentos e Bebidas"},
+  {store:"Sam's Club - E-commerce",category:"Alimentos e Bebidas"},
+  {store:"Samsonite",category:"Malas"},
+  {store:"Seculus",category:"Moda e Acessórios"},
+  {store:"Seguro Residencial MAPFRE",category:"Seguros"},
+  {store:"Seguro Viagem Bradesco",category:"Seguro Viagem"},
+  {store:"Sephora",category:"Perfumaria e Cosméticos"},
+  {store:"Seus Ingressos",category:"Ingressos e Passeios"},
+  {store:"Shiseido",category:"Perfumaria e Cosméticos"},
+  {store:"Shoestock",category:"Calçados"},
+  {store:"Shopee",category:"Outros"},
+  {store:"Sioux Seguro Celular",category:"Seguros"},
+  {store:"Sixt",category:"Aluguel de Carros"},
+  {store:"Speedo",category:"Esporte e Lazer"},
+  {store:"Spicy",category:"Moda e Acessórios"},
+  {store:"Studio Z",category:"Calçados"},
+  {store:"Suhai Seguradora",category:"Seguros"},
+  {store:"SulAmérica Plano Odonto",category:"Saúde"},
+  {store:"SulAmérica Seguro Viagem",category:"Seguro Viagem"},
+  {store:"Summerville",category:"Hotéis"},
+  {store:"Supernosso",category:"Alimentos e Bebidas"},
+  {store:"TIM",category:"Serviços"},
+  {store:"Technos",category:"Moda e Acessórios"},
+  {store:"Thule",category:"Malas"},
+  {store:"Tia Sônia",category:"Alimentos e Bebidas"},
+  {store:"Tokio Marine Seguros",category:"Seguros"},
+  {store:"Top Móveis",category:"Casa e Decoração"},
+  {store:"Travelex",category:"Câmbio"},
+  {store:"TripChip",category:"Chip de Celular"},
+  {store:"Trocafy",category:"Eletrônicos"},
+  {store:"Truss",category:"Saúde e Beleza"},
+  {store:"Umbro",category:"Esporte e Lazer"},
+  {store:"Under Armour",category:"Esporte e Lazer"},
+  {store:"Unidas",category:"Aluguel de Carros"},
+  {store:"Universal Assistance – Seguro Viagem",category:"Seguro Viagem"},
+  {store:"Universal Music",category:"Outros"},
+  {store:"Urban",category:"Moda e Acessórios"},
+  {store:"VR Collezioni",category:"Moda e Acessórios"},
+  {store:"Viajar",category:"Viagem e Serviços"},
+  {store:"Vivara",category:"Moda e Acessórios"},
+  {store:"Vult",category:"Perfumaria e Cosméticos"},
+  {store:"Wise UP",category:"Serviços"},
+  {store:"Yvy",category:"Moda e Beleza"},
+  {store:"Zattini",category:"Moda e Acessórios"},
+  {store:"Zee.Dog",category:"Pet Shop"},
+  {store:"Zee.Now",category:"Alimentos e Bebidas"},
+  {store:"Zissou",category:"Pet Shop"},
+  {store:"avis",category:"Aluguel de Carros"},
+  {store:"elbo",category:"Moda e Acessórios"},
+  {store:"Época Cosméticos",category:"Perfumaria e Cosméticos"}
+];
+
+/* ══════════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════════ */
+const selectedCats   = new Set();
+const selectedStores = new Set();
+let freq = 'daily';
+let acActiveIdx = -1;
+
+/* ══════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  renderChips();
+  setupStoreSearch();
+  checkStatus();
+  setupPhoneFormat();
+});
+
+/* ══════════════════════════════════════════════════════════════
+   CHIPS
+══════════════════════════════════════════════════════════════ */
+function renderChips() {
+  const grid = document.getElementById('chips-grid');
+  grid.innerHTML = CATEGORIES.map(c =>
+    `<div class="chip${selectedCats.has(c) ? ' selected' : ''}" onclick="toggleCat(this,'${esc(c)}')">${esc(c)}</div>`
+  ).join('');
+  updateCatCount();
+}
+
+function toggleCat(el, cat) {
+  if (selectedCats.has(cat)) { selectedCats.delete(cat); el.classList.remove('selected'); }
+  else { selectedCats.add(cat); el.classList.add('selected'); }
+  updateCatCount();
+}
+
+function selectAllCats() { CATEGORIES.forEach(c => selectedCats.add(c)); renderChips(); }
+function clearCats()     { selectedCats.clear(); renderChips(); }
+
+function updateCatCount() {
+  const n = selectedCats.size;
+  document.getElementById('chips-count').innerHTML =
+    `<strong>${n}</strong> ${n === 1 ? 'categoria selecionada' : 'categorias selecionadas'}`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STORE AUTOCOMPLETE
+══════════════════════════════════════════════════════════════ */
+function setupStoreSearch() {
+  const input = document.getElementById('store-search');
+  const list  = document.getElementById('autocomplete-list');
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    acActiveIdx = -1;
+    if (!q) { list.classList.remove('open'); return; }
+
+    const hits = STORES
+      .filter(s => !selectedStores.has(s.store) && s.store.toLowerCase().includes(q))
+      .slice(0, 9);
+
+    if (!hits.length) { list.classList.remove('open'); return; }
+
+    list.innerHTML = hits.map((s, i) =>
+      `<div class="autocomplete-item" data-store="${esc(s.store)}" data-i="${i}" onclick="addStore('${esc(s.store)}')">
+         <span>${highlight(s.store, q)}</span>
+         <span class="cat-badge">${esc(s.category)}</span>
+       </div>`
+    ).join('');
+    list.classList.add('open');
+  });
+
+  input.addEventListener('keydown', e => {
+    const items = list.querySelectorAll('.autocomplete-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); acActiveIdx = Math.min(acActiveIdx+1, items.length-1); highlightAc(items); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); acActiveIdx = Math.max(acActiveIdx-1, 0); highlightAc(items); }
+    else if (e.key === 'Enter' && acActiveIdx >= 0) { e.preventDefault(); addStore(items[acActiveIdx].dataset.store); }
+    else if (e.key === 'Escape') list.classList.remove('open');
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.store-search-wrap')) list.classList.remove('open');
+  });
+}
+
+function highlightAc(items) {
+  items.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx));
+  if (acActiveIdx >= 0) items[acActiveIdx].scrollIntoView({ block: 'nearest' });
+}
+
+function highlight(name, q) {
+  const i = name.toLowerCase().indexOf(q);
+  if (i < 0) return esc(name);
+  return esc(name.slice(0,i))
+    + `<strong style="color:var(--orange)">${esc(name.slice(i, i+q.length))}</strong>`
+    + esc(name.slice(i+q.length));
+}
+
+function addStore(name) {
+  selectedStores.add(name);
+  document.getElementById('store-search').value = '';
+  document.getElementById('autocomplete-list').classList.remove('open');
+  renderTags();
+}
+
+function removeStore(name) {
+  selectedStores.delete(name);
+  renderTags();
+}
+
+function renderTags() {
+  const wrap = document.getElementById('store-tags');
+  wrap.innerHTML = [...selectedStores].map(s =>
+    `<span class="store-tag">
+       ${esc(s)}
+       <button onclick="removeStore('${esc(s)}')" title="Remover">×</button>
+     </span>`
+  ).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FREQUENCY
+══════════════════════════════════════════════════════════════ */
+function setFreq(f) {
+  freq = f;
+  document.getElementById('tab-daily').classList.toggle('active', f === 'daily');
+  document.getElementById('tab-weekly').classList.toggle('active', f === 'weekly');
+  document.getElementById('opts-daily').classList.toggle('visible', f === 'daily');
+  document.getElementById('opts-weekly').classList.toggle('visible', f === 'weekly');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PHONE
+══════════════════════════════════════════════════════════════ */
+function setupPhoneFormat() {
+  const input = document.getElementById('phone-input');
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g,'').slice(0,11);
+  });
+}
+
+function validPhone(v) {
+  const d = v.replace(/\D/g,'');
+  return d.length >= 10 && d.length <= 11;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   WA STATUS
+══════════════════════════════════════════════════════════════ */
+async function checkStatus() {
+  const el  = document.getElementById('wa-status');
+  const txt = document.getElementById('wa-status-text');
+  try {
+    const r = await fetch('/api/status', { signal: AbortSignal.timeout(4000) });
+    const d = await r.json();
+    const ok = d?.whatsapp?.connected === true;
+    el.className = 'wa-status ' + (ok ? 'connected' : 'disconnected');
+    txt.textContent = ok ? 'WhatsApp conectado' : 'WhatsApp desconectado';
+  } catch {
+    el.className = 'wa-status disconnected';
+    txt.textContent = 'Servidor offline';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SUBMIT
+══════════════════════════════════════════════════════════════ */
+async function handleSubmit() {
+  const phoneInput = document.getElementById('phone-input');
+  const phoneErr   = document.getElementById('phone-error');
+  const btn        = document.getElementById('submit-btn');
+  const label      = btn.querySelector('.btn-label');
+
+  // Validate
+  if (!validPhone(phoneInput.value)) {
+    phoneErr.classList.add('visible');
+    phoneInput.closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  phoneErr.classList.remove('visible');
+
+  if (selectedCats.size === 0) {
+    showToast('⚠️ Selecione ao menos uma categoria.', 'warn');
+    document.getElementById('chips-grid').closest('.card').scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+
+  // Loading state
+  btn.disabled = true;
+  label.innerHTML = 'Buscando promoções… <span class="spin-inline"></span>';
+
+  const phone = phoneInput.value.replace(/\D/g,'');
+  const payload = {
+    phone,
+    categories:     [...selectedCats],
+    favoriteStores: [...selectedStores],
+    schedule:       buildSchedule()
+  };
+
+  // Simulated API call (will be replaced)
+  await new Promise(r => setTimeout(r, 1500));
+
+  btn.disabled = false;
+  label.innerHTML = 'Buscar promoções e enviar no WhatsApp';
+
+  renderPreview(payload);
+  showToast('✓ Configuração salva! Veja a prévia abaixo.');
+}
+
+function buildSchedule() {
+  const DAY_NAMES = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  if (freq === 'daily') {
+    return { type:'daily', time: document.getElementById('daily-time').value };
+  }
+  const day = parseInt(document.getElementById('weekly-day').value, 10);
+  return { type:'weekly', day, dayName: DAY_NAMES[day], time: document.getElementById('weekly-time').value };
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PREVIEW
+══════════════════════════════════════════════════════════════ */
+function renderPreview(payload) {
+  const now     = new Date();
+  const timeStr = now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+  const dateStr = now.toLocaleDateString('pt-BR', { day:'2-digit', month:'long' });
+
+  // Pick representative stores matching selected categories
+  const pool = STORES.filter(s => payload.categories.includes(s.category));
+  const sample = shuffle(pool).slice(0, 5);
+
+  const FAKE_PTS = [1,2,3,4,5,6,8,10];
+  const lines = sample.map(s => {
+    const pts = FAKE_PTS[Math.floor(Math.random() * FAKE_PTS.length)];
+    return `• *${s.store}* — ${pts} ${pts === 1 ? 'ponto' : 'pontos'} por R$\u00A01`;
+  });
+
+  const catSummary = payload.categories.slice(0,3).join(', ')
+    + (payload.categories.length > 3 ? ` +${payload.categories.length - 3} outras` : '');
+
+  const favLine = payload.favoriteStores.length
+    ? `⭐ *Favoritas:* ${payload.favoriteStores.slice(0,3).join(', ')}${payload.favoriteStores.length > 3 ? ` +${payload.favoriteStores.length-3}` : ''}\n\n`
+    : '';
+
+  const schedLine = payload.schedule.type === 'daily'
+    ? `Todo dia às ${payload.schedule.time}`
+    : `Toda ${payload.schedule.dayName} às ${payload.schedule.time}`;
+
+  const msg =
+`💎 *LIVELO ALERT* — ${dateStr}
+
+Olá! Aqui estão as promoções de hoje nas suas categorias:
+📂 ${catSummary}
+
+${favLine}${lines.join('\n')}
+${pool.length > 5 ? `\n…e mais ${pool.length - 5} promoções disponíveis!` : ''}
+
+⏰ *Próximo envio:* ${schedLine}
+
+_Responda_ *PARAR* _para cancelar._`;
+
+  document.getElementById('preview-text').textContent = msg.trim();
+  document.getElementById('preview-time').textContent = timeStr;
+
+  const section = document.getElementById('preview-section');
+  section.style.display = 'block';
+  // Re-trigger animation
+  section.style.animation = 'none';
+  void section.offsetWidth;
+  section.style.animation = '';
+  setTimeout(() => section.scrollIntoView({ behavior:'smooth', block:'nearest' }), 80);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════════════════ */
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let toastTimer;
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background   = type === 'warn' ? '#2e1a1a' : '#1a2e22';
+  t.style.borderColor  = type === 'warn' ? '#f87171' : '#4ade80';
+  t.style.color        = type === 'warn' ? '#f87171' : '#4ade80';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+</script>
+</body>
+</html>

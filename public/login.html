@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Livelo Alert — Entrar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/shared.css" />
+  <style>
+    .login-scene {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px 20px;
+    }
+
+    .login-box {
+      width: 100%; max-width: 440px;
+      animation: fadeUp .4s ease both;
+    }
+
+    /* Branding */
+    .brand { text-align: center; margin-bottom: 36px; }
+    .brand-eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: .14em; text-transform: uppercase;
+      color: var(--orange); margin-bottom: 8px;
+    }
+    .brand-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px; font-weight: 800;
+      line-height: 1.05; letter-spacing: -.02em;
+    }
+    .brand-title span { color: var(--orange); }
+    .brand-sub { margin-top: 6px; font-size: 14px; color: var(--muted); font-weight: 300; }
+
+    /* Card */
+    .auth-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: var(--shadow);
+    }
+
+    /* Mode tabs */
+    .mode-tabs {
+      display: flex; gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px; margin-bottom: 28px;
+    }
+    .mode-tab {
+      flex: 1; padding: 9px 12px;
+      border-radius: 6px; border: none;
+      background: transparent; color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px; font-weight: 500;
+      cursor: pointer; transition: all .2s;
+    }
+    .mode-tab.active {
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,.4);
+    }
+
+    /* Form fields */
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    .form-input {
+      width: 100%; height: 48px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 400;
+      padding: 0 16px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px var(--orange-lo);
+    }
+    .form-input::placeholder { color: var(--muted); }
+
+    /* Error banner */
+    .auth-error {
+      background: rgba(248,113,113,.1);
+      border: 1px solid rgba(248,113,113,.3);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 13px; color: var(--red);
+      margin-bottom: 16px; display: none;
+    }
+    .auth-error.visible { display: block; }
+
+    /* Info banner (e.g. confirm email) */
+    .auth-info {
+      background: var(--orange-lo);
+      border: 1px solid var(--orange-md);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 13px; color: var(--text);
+      margin-bottom: 16px; display: none;
+      line-height: 1.5;
+    }
+    .auth-info.visible { display: block; }
+
+    /* Confirm group */
+    #confirm-group { display: none; }
+    #confirm-group.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="page-loading" id="page-loading">
+  <div class="spin-lg"></div>
+</div>
+
+<div class="login-scene" id="login-scene" style="display:none">
+  <div class="login-box">
+
+    <div class="brand">
+      <div class="brand-eyebrow">Livelo Alert</div>
+      <h1 class="brand-title">Promoções<br>no <span>WhatsApp</span></h1>
+      <p class="brand-sub">Alertas personalizados dos 259 parceiros Livelo.</p>
+    </div>
+
+    <div class="auth-card">
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="tab-login" onclick="setMode('login')">Entrar</button>
+        <button class="mode-tab"        id="tab-signup" onclick="setMode('signup')">Criar conta</button>
+      </div>
+
+      <div class="auth-error" id="auth-error"></div>
+      <div class="auth-info"  id="auth-info"></div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-input" type="email" id="email" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Senha</label>
+        <input class="form-input" type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+
+      <div class="form-group" id="confirm-group">
+        <label class="form-label" for="confirm">Confirmar senha</label>
+        <input class="form-input" type="password" id="confirm" placeholder="••••••••" autocomplete="new-password" />
+      </div>
+
+      <button class="submit-btn" id="auth-btn" onclick="handleAuth()" style="margin-top:8px">
+        <span id="btn-label">Entrar</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ── Supabase init ─────────────────────────────────────── */
+let sb;
+
+async function initSupabase() {
+  const res = await fetch('/api/config');
+  if (!res.ok) throw new Error('Falha ao carregar configuração do servidor.');
+  const { supabaseUrl, supabaseAnonKey } = await res.json();
+  if (!supabaseAnonKey) throw new Error('SUPABASE_ANON_KEY não configurada no servidor.');
+  sb = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+}
+
+/* ── Mode toggle ───────────────────────────────────────── */
+let mode = 'login';
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-login').classList.toggle('active', m === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', m === 'signup');
+  document.getElementById('confirm-group').classList.toggle('visible', m === 'signup');
+  document.getElementById('auth-btn').querySelector('#btn-label').textContent =
+    m === 'login' ? 'Entrar' : 'Criar conta';
+  document.getElementById('password').autocomplete =
+    m === 'login' ? 'current-password' : 'new-password';
+  clearMessages();
+}
+
+/* ── Auth handlers ─────────────────────────────────────── */
+async function handleAuth() {
+  clearMessages();
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const confirm  = document.getElementById('confirm').value;
+  const btn      = document.getElementById('auth-btn');
+  const label    = document.getElementById('btn-label');
+
+  if (!email || !password) { showError('Preencha email e senha.'); return; }
+  if (mode === 'signup' && password !== confirm) { showError('As senhas não coincidem.'); return; }
+  if (mode === 'signup' && password.length < 6) { showError('A senha deve ter pelo menos 6 caracteres.'); return; }
+
+  btn.disabled = true;
+  label.innerHTML = `${mode === 'login' ? 'Entrando' : 'Criando conta'}…<span class="spin-inline"></span>`;
+
+  try {
+    if (mode === 'login') {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await redirectAfterLogin(data.session);
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+      // Supabase pode exigir confirmação de e-mail
+      if (data.session) {
+        await redirectAfterLogin(data.session);
+      } else {
+        showInfo('✉️ Verifique seu e-mail para confirmar o cadastro. Após confirmar, volte aqui e entre com sua senha.');
+        btn.disabled = false;
+        label.textContent = 'Criar conta';
+      }
+    }
+  } catch (err) {
+    showError(translateError(err.message));
+    btn.disabled = false;
+    label.textContent = mode === 'login' ? 'Entrar' : 'Criar conta';
+  }
+}
+
+async function redirectAfterLogin(session) {
+  const res = await fetch('/api/users/me', {
+    headers: { Authorization: `Bearer ${session.access_token}` }
+  });
+  window.location.replace(res.ok ? '/dashboard.html' : '/setup.html');
+}
+
+/* ── Messages ──────────────────────────────────────────── */
+function showError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.classList.add('visible');
+}
+function showInfo(msg) {
+  const el = document.getElementById('auth-info');
+  el.textContent = msg; el.classList.add('visible');
+}
+function clearMessages() {
+  document.getElementById('auth-error').classList.remove('visible');
+  document.getElementById('auth-info').classList.remove('visible');
+}
+
+function translateError(msg) {
+  if (/invalid login credentials/i.test(msg))   return 'Email ou senha incorretos.';
+  if (/email not confirmed/i.test(msg))          return 'Confirme seu e-mail antes de entrar.';
+  if (/user already registered/i.test(msg))      return 'Este e-mail já está cadastrado. Use "Entrar".';
+  if (/password.*characters/i.test(msg))         return 'A senha deve ter pelo menos 6 caracteres.';
+  return msg;
+}
+
+/* ── Toast ─────────────────────────────────────────────── */
+let toastTimer;
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type}`;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ── Boot ──────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await initSupabase();
+
+    // Já logado? Redireciona direto
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      await redirectAfterLogin(session);
+      return;
+    }
+  } catch (err) {
+    console.error('Erro ao inicializar:', err.message);
+  }
+
+  // Permite digitar Enter nos inputs
+  document.getElementById('password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleAuth();
+  });
+  document.getElementById('confirm').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleAuth();
+  });
+
+  document.getElementById('page-loading').classList.add('hidden');
+  document.getElementById('login-scene').style.display = 'flex';
+});
+</script>
+</body>
+</html>
