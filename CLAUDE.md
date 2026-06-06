@@ -385,3 +385,54 @@ curl -X POST http://localhost:8080/message/sendText/livelo-bot \
   -H "apikey: minha-chave-secreta" \
   -d '{"number":"5511978592072","textMessage":{"text":"Teste ✅"}}'
 ```
+
+---
+
+## Deploy
+
+### GitHub
+
+- Repositório: https://github.com/Brunoacciolydacosta/livelo-alert
+- Branch: `main`
+- `.gitignore` configurado: `node_modules/`, `.env`, `logs/`, `data/`, `scraper-resultado.json`, `*.db`, `diag-*.js`, `*-debug.png`, `test-*.js`, `.claude/`
+
+### VPS Hostinger (produção atual)
+
+- **IP:** 2.25.180.68
+- **SO:** Ubuntu 22.04
+- **Custo:** ~R$30/mês
+- **App:** `/opt/livelo-alert`
+- **Acesso:** `ssh root@2.25.180.68` (chave SSH configurada, sem senha)
+
+**Stack rodando:**
+- Node.js 20 + PM2 — servidor Express na porta 3000, processo `livelo-alert`
+- Evolution API v1.8.7 — container Docker `evolution-api`, porta 8080
+- PM2 salvo em `/root/.pm2/dump.pm2` — reinicia automaticamente após reboot
+
+**Para atualizar o servidor após push:**
+```bash
+ssh root@2.25.180.68 "cd /opt/livelo-alert && git pull && npm install && pm2 restart livelo-alert"
+```
+
+**Comandos úteis na VPS:**
+```bash
+pm2 status                          # estado do processo
+pm2 logs livelo-alert --lines 50    # ver logs em tempo real
+docker ps                           # verificar Evolution API
+docker logs evolution-api           # logs da Evolution API
+curl -s http://localhost:3000/api/status   # checar servidor
+```
+
+**⚠️ Supabase plano gratuito:** pausa após ~1 semana de inatividade. Se o login retornar
+`ERR_NAME_NOT_RESOLVED`, acessar [supabase.com/dashboard](https://supabase.com/dashboard)
+e clicar em **"Restore project"** (leva ~2 minutos).
+
+**⚠️ Node.js 20 + Supabase:** o `@supabase/realtime-js` exige o pacote `ws` no Node < 22.
+Ambos os `createClient` (em `database.js` e `index.js`) já passam `{ realtime: { transport: ws } }`.
+
+### Pendências de infra
+
+- [ ] Conectar WhatsApp Business na Evolution API da VPS
+      — acessar http://2.25.180.68:8080/manager e escanear QR code com o celular
+- [ ] Fazer teste end-to-end completo na VPS (agente + scraper + WhatsApp)
+- [ ] Testar fluxo completo do frontend (cadastro → setup → dashboard)
