@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
+const ws = require('ws');
 const logger = require('./logger');
 const db = require('./database');
 const { runAgent } = require('./agent');
@@ -17,7 +18,8 @@ const PORT = process.env.PORT || 3000;
 // Supabase client para validação de JWT (usa SUPABASE_KEY no servidor)
 const supabaseAuth = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+  process.env.SUPABASE_KEY,
+  { realtime: { transport: ws } }
 );
 
 app.use(express.json());
