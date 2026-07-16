@@ -263,4 +263,6 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.listen(PORT, () => {
   logger.info(`Livelo Alert rodando em http://localhost:${PORT}`);
   logger.info('Aguardando WhatsApp conectar...');
+  startScheduler();
+  logger.info('Scheduler iniciado automaticamente.');
 });
