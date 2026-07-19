@@ -133,7 +133,7 @@ separadores `━━━`, bloco de transferências no final, rodapé com horário
 
 ### src/index.js
 
-Express na porta 3000. Rotas:
+Express na porta 3000. `startScheduler()` é chamado automaticamente dentro do `app.listen` — não é necessário chamar `/api/scheduler/start` manualmente após deploy. Rotas:
 - `GET    /api/status`           — estado do WhatsApp e do scheduler
 - `POST   /api/users`            — cadastra/atualiza preferências do usuário
 - `GET    /api/users/:phone`     — lê preferências salvas
@@ -206,7 +206,7 @@ SUPABASE_KEY=<secret key>
 
 - [x] **Evolution API rodando via Docker** — v1.8.7, container `evolution-api`, porta 8080
       (v1.x não precisa de PostgreSQL externo)
-- [x] **WhatsApp Business conectado** — número 5511978592072, instância `livelo-bot`
+- [x] **WhatsApp Business conectado** — número 5511978592072, instância `teste` (nome real no container da VPS)
 - [x] **Teste de envio confirmado** — mensagem entregue com sucesso via API
 - [x] **Bug payload whatsapp.js corrigido** — `textMessage: { text }` em vez de `text`
 - [x] **Formato final da mensagem WhatsApp** — lojas favoritas com ⭐ primeiro,
@@ -250,12 +250,14 @@ SUPABASE_KEY=<secret key>
 - [x] **`GET /api/logs?lines=N`** — auth; lê últimas N linhas do combined.log do dia
 - [x] **Seção "Logs do sistema"** no dashboard — botão "Ver logs", área monospace,
       erros em vermelho e warnings em amarelo
+- [x] **`startScheduler()` automático** — chamado no `app.listen` em `src/index.js`; scheduler ativo desde o boot sem intervenção manual
+- [x] **Confirmação de email desativada** — Supabase Auth → Sign In / Providers → Confirm email = OFF; `login.html` redireciona direto para `setup.html` após `signUp` bem-sucedido
 
 ### O que falta fazer
 
-- [ ] Fazer teste end-to-end completo (agente + scraper + WhatsApp)
-- [ ] Testar fluxo completo do frontend (cadastro → setup → dashboard)
-- [ ] Colocar em produção (hospedar servidor em nuvem)
+- [x] Teste end-to-end completo (agente + scraper + WhatsApp) — confirmado na VPS em 2026-07-15
+- [x] Em produção — VPS Hostinger 2.25.180.68
+- [x] Testar fluxo completo do frontend (cadastro → setup → dashboard) — confirmado em 2026-07-19
 - [ ] (Opcional) `npm uninstall sql.js` — não é mais usado após migração para Supabase
 
 ---
@@ -329,7 +331,10 @@ Versão v1.8.7 (v1.x não exige PostgreSQL externo). Container persistente:
 docker start evolution-api                              # reiniciar após reboot
 docker update --restart unless-stopped evolution-api   # subir automático no boot
 ```
-Instância `livelo-bot` já criada e WhatsApp (5511978592072) conectado.
+Instância `teste` já criada e WhatsApp (5511978592072) conectado (nome real da instância na VPS é `teste`, não `livelo-bot`).
+
+⚠️ Se o envio falhar com erro de instância, verificar `EVOLUTION_INSTANCE` no `.env` da VPS: `ssh root@2.25.180.68 "grep EVOLUTION_INSTANCE /opt/livelo-alert/.env"`
+Para corrigir: `ssh root@2.25.180.68 "sed -i 's/EVOLUTION_INSTANCE=livelo-bot/EVOLUTION_INSTANCE=teste/' /opt/livelo-alert/.env && pm2 restart livelo-alert --update-env"`
 
 ---
 
@@ -380,7 +385,7 @@ node test-whatsapp-message.js
 node test-scraper.js --salvar
 
 # Testar envio direto via Evolution API (bypass do servidor Node)
-curl -X POST http://localhost:8080/message/sendText/livelo-bot \
+curl -X POST http://localhost:8080/message/sendText/teste \
   -H "Content-Type: application/json" \
   -H "apikey: minha-chave-secreta" \
   -d '{"number":"5511978592072","textMessage":{"text":"Teste ✅"}}'
@@ -423,6 +428,16 @@ docker logs evolution-api           # logs da Evolution API
 curl -s http://localhost:3000/api/status   # checar servidor
 ```
 
+**⚠️ VPS Hostinger:** pode ser suspensa por falta de pagamento. Se inacessível, verificar painel da Hostinger. Após reativar: `pm2 resurrect` pode ser necessário se o processo não subiu automaticamente.
+
+**Checklist após VPS suspensa e reativada:**
+1. `ssh root@2.25.180.68 "pm2 status"` — verificar se `livelo-alert` está online (se não: `pm2 resurrect`)
+2. Supabase dashboard → tabela `users` → confirmar `active = true` para o usuário
+3. `http://2.25.180.68:8080/manager` — reconectar WhatsApp se necessário (QR code)
+4. `curl -s http://localhost:3000/api/status` — verificar scheduler e instância WA
+
+**⚠️ Usuário com `active: false`:** se nenhuma mensagem é enviada mas o sistema parece OK, verificar o campo `active` na tabela `users` no Supabase dashboard e setar `true` manualmente se necessário.
+
 **⚠️ Supabase plano gratuito:** pausa após ~1 semana de inatividade. Se o login retornar
 `ERR_NAME_NOT_RESOLVED`, acessar [supabase.com/dashboard](https://supabase.com/dashboard)
 e clicar em **"Restore project"** (leva ~2 minutos).
@@ -432,7 +447,6 @@ Ambos os `createClient` (em `database.js` e `index.js`) já passam `{ realtime: 
 
 ### Pendências de infra
 
-- [ ] Conectar WhatsApp Business na Evolution API da VPS
-      — acessar http://2.25.180.68:8080/manager e escanear QR code com o celular
-- [ ] Fazer teste end-to-end completo na VPS (agente + scraper + WhatsApp)
+- [x] WhatsApp Business conectado na Evolution API da VPS — instância `teste`, número 5511978592072
+- [x] Teste end-to-end completo na VPS — confirmado em 2026-07-15
 - [ ] Testar fluxo completo do frontend (cadastro → setup → dashboard)
