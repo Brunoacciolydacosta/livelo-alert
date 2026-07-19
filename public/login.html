@@ -226,14 +226,7 @@ async function handleAuth() {
     } else {
       const { data, error } = await sb.auth.signUp({ email, password });
       if (error) throw error;
-      // Supabase pode exigir confirmação de e-mail
-      if (data.session) {
-        await redirectAfterLogin(data.session);
-      } else {
-        showInfo('✉️ Verifique seu e-mail para confirmar o cadastro. Após confirmar, volte aqui e entre com sua senha.');
-        btn.disabled = false;
-        label.textContent = 'Criar conta';
-      }
+      await redirectAfterLogin(data.session);
     }
   } catch (err) {
     showError(translateError(err.message));
