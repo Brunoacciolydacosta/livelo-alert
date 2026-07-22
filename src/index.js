@@ -189,10 +189,13 @@ app.post('/api/test-whatsapp', requireAuth, async (req, res) => {
     const user = await db.getUserByUserId(req.user.id);
     if (!user) return res.status(404).json({ error: 'Perfil não encontrado. Configure suas preferências.' });
 
-    const promotions = await db.getRecentPromotions(300);
+    let promotions = await db.getRecentPromotions(300);
+    if (promotions.length === 0) {
+      promotions = await db.getLatestPromotions(300);
+    }
     if (promotions.length === 0) {
       return res.status(400).json({
-        error: 'Nenhuma promoção salva hoje. Clique em "Buscar promoções agora" primeiro.'
+        error: 'Nenhuma promoção disponível no banco. Clique em "Buscar promoções agora" primeiro.'
       });
     }
 
