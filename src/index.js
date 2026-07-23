@@ -64,7 +64,7 @@ app.get('/api/status', (req, res) => {
   res.json({
     whatsapp:  isWhatsAppReady() ? 'connected' : 'connecting',
     scheduler: isRunning() ? 'active' : 'inactive',
-    schedule:  process.env.CRON_SCHEDULE || '0 8 * * *',
+    schedule:  '0 * * * * (scraper às 8h, envios por horário de cada usuário)',
   });
 });
 
