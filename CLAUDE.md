@@ -329,8 +329,8 @@ Exportadas: `upsertUser` (aceita `userId`, `minPointsThreshold`, `maxStoresPerMe
 
 Migrado de container único `atendai/evolution-api:v1.8.7` para stack `docker-compose`
 em `/opt/evolution/docker-compose.yml`, imagem `evoapicloud/evolution-api:v2.3.7`.
-Motivo: v1.8.x parou de entregar mensagens (WhatsApp migrou p/ endereçamento `@lid`,
-Baileys antigo não suporta).
+Motivo: v1.8.x está descontinuada e para descartar incompatibilidade de protocolo
+como causa do problema de entrega (descartada — o erro persiste igual na v2).
 
 ⚠️ **O registro `atendai/evolution-api` não existe mais no Docker Hub** — a imagem
 foi renomeada para `evoapicloud/evolution-api`. `docker pull atendai/...` falha com
@@ -469,9 +469,16 @@ Ambos os `createClient` (em `database.js` e `index.js`) já passam `{ realtime: 
 - [x] Teste end-to-end completo na VPS — confirmado em 2026-07-15
 - [ ] Testar fluxo completo do frontend (cadastro → setup → dashboard)
 - [ ] **Investigar erro 463 no envio (WhatsApp)** — mensagem de teste pós-migração p/ v2.3.7
-      recebeu `status: 0` (ERROR) com `messageStubParameters: ["463"]`, código do WhatsApp
-      associado a restrição por comportamento tipo spam (possivelmente por testes repetidos
-      ao mesmo número nesta sessão). Payload/API corretos — falha é na entrega do WhatsApp.
-- [ ] **Reativar o scheduler** (`POST /api/scheduler/stop` chamado em 2026-07-24 para evitar
-      envios automáticos até o erro 463 ser investigado) — não reativa sozinho, precisa
-      `POST /api/scheduler/start` quando resolvido.
+      recebeu `status: 0` (ERROR) com `messageStubParameters: ["463"]`. Payload/API corretos
+      — falha é na entrega do WhatsApp. Duas hipóteses em aberto:
+      - **A:** restrição do WhatsApp à sessão de dispositivo vinculado (Baileys), que não
+        afeta o app nativo
+      - **B:** falha de sessão criptográfica E2E específica com o número de destino
+      - **Teste que separa as duas:** enviar pela API para um terceiro número. Se falhar
+        também → A. Se entregar → B.
+- [ ] **Reativar o scheduler** — `POST /api/scheduler/stop` foi chamado em 2026-07-24 para
+      evitar envios automáticos até o erro 463 ser investigado. ⚠️ Ele **volta sozinho**:
+      `src/index.js` chama `startScheduler()` dentro do `app.listen`, então qualquer
+      `pm2 restart`, deploy ou reboot da VPS o religa. Para pausar de verdade, é preciso
+      comentar essa chamada em `src/index.js` ou parar o processo no PM2 (`pm2 stop
+      livelo-alert`).
