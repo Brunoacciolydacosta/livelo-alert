@@ -115,12 +115,13 @@ Taxas atuais (todas 1:1): Azul mín 1.000 pts · LATAM mín 12.000 pts · Smiles
 
 ### src/whatsapp.js
 
-Wrapper sobre a Evolution API (servidor Docker self-hosted, v1.8.7). Formata e envia
+Wrapper sobre a Evolution API (servidor Docker self-hosted, **v2.3.7** desde 2026-07-24,
+stack via docker-compose — ver "Evolution API — Docker Compose" em Próximos Passos). Formata e envia
 mensagens de texto via `POST /message/sendText/:instance`. Cria a instância
 automaticamente ao iniciar se ela não existir.
 
-⚠️ **Payload correto (v1.x):** `{ number, textMessage: { text: message } }` — NÃO usar
-`{ number, text: message }` (formato errado, retorna HTTP 400).
+⚠️ **Payload correto (v2.x):** `{ number, text: message }` — formato mudou na migração
+p/ v2.3.7 (v1.8.x usava `{ number, textMessage: { text: message } }`, hoje retorna HTTP 400).
 
 **Formato da mensagem:** lojas favoritas com ⭐ primeiro, ordenadas por pts/R$1 DESC,
 separadores `━━━`, bloco de transferências no final, rodapé com horário.
@@ -324,17 +325,34 @@ Exportadas: `upsertUser` (aceita `userId`, `minPointsThreshold`, `maxStoresPerMe
 
 ## Próximos Passos
 
-### Evolution API — Docker (já configurado)
+### Evolution API — Docker Compose (migrado para v2.3.7 em 2026-07-24)
 
-Versão v1.8.7 (v1.x não exige PostgreSQL externo). Container persistente:
+Migrado de container único `atendai/evolution-api:v1.8.7` para stack `docker-compose`
+em `/opt/evolution/docker-compose.yml`, imagem `evoapicloud/evolution-api:v2.3.7`.
+Motivo: v1.8.x parou de entregar mensagens (WhatsApp migrou p/ endereçamento `@lid`,
+Baileys antigo não suporta).
+
+⚠️ **O registro `atendai/evolution-api` não existe mais no Docker Hub** — a imagem
+foi renomeada para `evoapicloud/evolution-api`. `docker pull atendai/...` falha com
+"pull access denied / repository does not exist".
+
+v2.x **exige PostgreSQL** (`DATABASE_ENABLED=true`), diferente da v1.x. Stack com 3
+serviços: `postgres:15`, `redis:alpine`, `evolution-api` — todos `restart:
+unless-stopped`, volumes nomeados (`postgres_data`, `redis_data`,
+`evolution_instances`). Senha do Postgres gerada com `openssl rand -hex 24` e
+hardcoded no `DATABASE_CONNECTION_URI` dentro do próprio `docker-compose.yml`
+(sem `.env` separado ainda).
+
+Nome real da instância na VPS é `livelo-bot` (não `teste` — instância antiga não
+existe mais, tudo recriado do zero na migração para v2).
+
 ```bash
-docker start evolution-api                              # reiniciar após reboot
-docker update --restart unless-stopped evolution-api   # subir automático no boot
+cd /opt/evolution && docker compose up -d                                          # subir stack
+docker compose -f /opt/evolution/docker-compose.yml logs evolution-api --tail 30   # logs
+docker compose -f /opt/evolution/docker-compose.yml ps                             # status dos 3 containers
+docker compose -f /opt/evolution/docker-compose.yml restart                        # reiniciar
+curl -s http://localhost:8080                                                      # health check (retorna version 2.3.7)
 ```
-Instância `teste` já criada e WhatsApp (5511978592072) conectado (nome real da instância na VPS é `teste`, não `livelo-bot`).
-
-⚠️ Se o envio falhar com erro de instância, verificar `EVOLUTION_INSTANCE` no `.env` da VPS: `ssh root@2.25.180.68 "grep EVOLUTION_INSTANCE /opt/livelo-alert/.env"`
-Para corrigir: `ssh root@2.25.180.68 "sed -i 's/EVOLUTION_INSTANCE=livelo-bot/EVOLUTION_INSTANCE=teste/' /opt/livelo-alert/.env && pm2 restart livelo-alert --update-env"`
 
 ---
 
@@ -384,11 +402,11 @@ node test-whatsapp-message.js
 # Gerar scraper-resultado.json (necessário para test-whatsapp-message.js)
 node test-scraper.js --salvar
 
-# Testar envio direto via Evolution API (bypass do servidor Node)
-curl -X POST http://localhost:8080/message/sendText/teste \
+# Testar envio direto via Evolution API (bypass do servidor Node) — payload v2.x
+curl -X POST http://localhost:8080/message/sendText/livelo-bot \
   -H "Content-Type: application/json" \
   -H "apikey: minha-chave-secreta" \
-  -d '{"number":"5511978592072","textMessage":{"text":"Teste ✅"}}'
+  -d '{"number":"5511978592072","text":"Teste ✅"}'
 ```
 
 ---
@@ -447,6 +465,13 @@ Ambos os `createClient` (em `database.js` e `index.js`) já passam `{ realtime: 
 
 ### Pendências de infra
 
-- [x] WhatsApp Business conectado na Evolution API da VPS — instância `teste`, número 5511978592072
+- [x] WhatsApp Business conectado na Evolution API da VPS — instância `livelo-bot`, número 5511978592072
 - [x] Teste end-to-end completo na VPS — confirmado em 2026-07-15
 - [ ] Testar fluxo completo do frontend (cadastro → setup → dashboard)
+- [ ] **Investigar erro 463 no envio (WhatsApp)** — mensagem de teste pós-migração p/ v2.3.7
+      recebeu `status: 0` (ERROR) com `messageStubParameters: ["463"]`, código do WhatsApp
+      associado a restrição por comportamento tipo spam (possivelmente por testes repetidos
+      ao mesmo número nesta sessão). Payload/API corretos — falha é na entrega do WhatsApp.
+- [ ] **Reativar o scheduler** (`POST /api/scheduler/stop` chamado em 2026-07-24 para evitar
+      envios automáticos até o erro 463 ser investigado) — não reativa sozinho, precisa
+      `POST /api/scheduler/start` quando resolvido.
