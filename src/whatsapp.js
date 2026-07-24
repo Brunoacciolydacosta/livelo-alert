@@ -196,7 +196,7 @@ async function sendPromoAlert({ phone, promotions, userCategories, favoriteStore
       method: 'POST',
       body: JSON.stringify({
         number: normalized,
-        textMessage: { text: message },
+        text: message,
       }),
     });
 
